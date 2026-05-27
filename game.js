@@ -20,7 +20,8 @@ class Game {
     this.cells = [];
     this.flagCount = 0;
     this.revealedCount = 0;
-    this.openedSinceLastSteal = 0;
+    this.flagsPlacedSinceLastSteal = 0;
+    this.nextStealThreshold = this._randomThreshold();
     this.firstClick = true;
     this.gameOver = false;
     this.won = false;
@@ -69,7 +70,7 @@ class Game {
     }
   }
 
-  // Returns { type: 'none'|'mine'|'reveal'|'win', steals?: number, row?: number, col?: number }
+  // Returns { type: 'none'|'mine'|'reveal'|'win', row?: number, col?: number }
   reveal(row, col) {
     if (this.gameOver || this.won) return { type: 'none' };
     const cell = this.cells[row][col];
@@ -90,17 +91,13 @@ class Game {
 
     const newlyRevealed = this._floodFill(row, col);
     this.revealedCount += newlyRevealed;
-    this.openedSinceLastSteal += newlyRevealed;
-
-    const steals = Math.floor(this.openedSinceLastSteal / 5);
-    this.openedSinceLastSteal %= 5;
 
     if (this.revealedCount >= this.rows * this.cols - this.totalMines) {
       this.won = true;
       this._stopTimer();
-      return { type: 'win', steals };
+      return { type: 'win' };
     }
-    return { type: 'reveal', steals };
+    return { type: 'reveal' };
   }
 
   _floodFill(row, col) {
@@ -124,14 +121,27 @@ class Game {
     return count;
   }
 
-  // Returns true (flag placed), false (flag removed), or null (not allowed)
+  // Returns { placed: bool, steals: 0|1 } or null (not allowed)
   toggleFlag(row, col) {
     if (this.gameOver || this.won || this.firstClick) return null;
     const cell = this.cells[row][col];
     if (cell.revealed) return null;
     cell.flagged = !cell.flagged;
     this.flagCount += cell.flagged ? 1 : -1;
-    return cell.flagged;
+    let steals = 0;
+    if (cell.flagged) {
+      this.flagsPlacedSinceLastSteal++;
+      if (this.flagsPlacedSinceLastSteal >= this.nextStealThreshold) {
+        this.flagsPlacedSinceLastSteal = 0;
+        this.nextStealThreshold = this._randomThreshold();
+        steals = 1;
+      }
+    }
+    return { placed: cell.flagged, steals };
+  }
+
+  _randomThreshold() {
+    return Math.random() < 0.5 ? 3 : 5;
   }
 
   // Returns [row, col] of stolen flag, or null if no flags exist
@@ -261,9 +271,8 @@ const UI = {
     this._updateMineCounter();
     if (result.type === 'mine') {
       this._showGameOver(result.row, result.col);
-    } else {
-      this._scheduleKostyaSteals(result.steals);
-      if (result.type === 'win') this._showWin();
+    } else if (result.type === 'win') {
+      this._showWin();
     }
   },
 
@@ -272,6 +281,7 @@ const UI = {
     if (result !== null) {
       this._updateCellEl(row, col);
       this._updateMineCounter();
+      this._scheduleKostyaSteals(result.steals);
     }
   },
 
