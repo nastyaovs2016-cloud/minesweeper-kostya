@@ -1,0 +1,219 @@
+:root {
+  --bg:               #C8956C;
+  --cell-closed:      #D4956A;
+  --cell-open:        #E8C49A;
+  --cell-border-lt:   #E8B080;
+  --cell-border-dk:   #7A4020;
+  --board-bg:         #8B5E3C;
+  --text:             #FFF8E8;
+  --font:             'Silkscreen', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  font-family: var(--font);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* --- Difficulty buttons --- */
+#difficulty-selector { display: flex; gap: 6px; }
+
+.diff-btn {
+  font-family: var(--font);
+  font-size: 11px;
+  padding: 6px 12px;
+  background: #8B5E3C;
+  color: var(--text);
+  border: 2px solid;
+  border-color: #A07050 #5A3010 #5A3010 #A07050;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+.diff-btn:hover,
+.diff-btn.active { background: #A07050; }
+
+/* --- Game layout --- */
+#game-container { display: flex; gap: 24px; align-items: flex-start; }
+
+#sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 120px;
+}
+
+#mine-counter,
+#timer {
+  font-size: 18px;
+  background: #6B3A1F;
+  padding: 8px 12px;
+  border: 2px solid #4A2010;
+  letter-spacing: 1px;
+}
+
+#new-game-btn {
+  font-family: var(--font);
+  font-size: 12px;
+  padding: 10px;
+  background: #8B5E3C;
+  color: var(--text);
+  border: 2px solid;
+  border-color: #A07050 #5A3010 #5A3010 #A07050;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+#new-game-btn:hover { background: #A07050; }
+
+#message {
+  font-size: 16px;
+  text-align: center;
+  min-height: 28px;
+  line-height: 1.4;
+}
+#message.win  { color: #90EE90; }
+#message.lose { color: #FF6060; }
+
+/* --- Board wrapper: holds Kostya above the board --- */
+#board-wrapper {
+  position: relative;
+  padding-top: 90px;
+}
+
+#kostya-container {
+  position: absolute;
+  top: 0;
+  right: -8px;
+  z-index: 10;
+}
+
+#kostya-sprite {
+  position: relative;
+  width: 72px;
+  transform-origin: 50% 20%;
+  animation: swing-legs 1.5s ease-in-out infinite;
+}
+
+#kostya-sprite img {
+  width: 72px;
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Comic speech bubble */
+#speech-bubble {
+  position: absolute;
+  top: 6px;
+  right: 78px;
+  background: #FFF8E8;
+  color: #2a1005;
+  font-family: var(--font);
+  font-size: 9px;
+  padding: 4px 8px;
+  border: 2px solid #2a1005;
+  white-space: nowrap;
+}
+#speech-bubble::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -9px;
+  transform: translateY(-50%);
+  border: 4px solid transparent;
+  border-left-color: #2a1005;
+}
+#speech-bubble.hidden  { display: none; }
+#speech-bubble.visible {
+  display: block;
+  animation: bubble-pop 0.2s ease-out;
+}
+
+/* --- Game board --- */
+#board {
+  display: grid;
+  border: 4px solid var(--board-bg);
+  background: var(--board-bg);
+  gap: 2px;
+  user-select: none;
+}
+
+.cell {
+  width: 32px;
+  height: 32px;
+  background: var(--cell-closed);
+  border: 2px solid;
+  border-color: var(--cell-border-lt) var(--cell-border-dk) var(--cell-border-dk) var(--cell-border-lt);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-family: var(--font);
+  font-weight: 700;
+}
+
+.cell.revealed {
+  background: var(--cell-open);
+  border-color: #C0885A;
+  cursor: default;
+}
+
+.cell.mine     { background: var(--cell-open); }
+.cell.mine-hit { background: #FF5050 !important; }
+
+.cell[data-num="1"] { color: #2a8c1a; }
+.cell[data-num="2"] { color: #1a5c8a; }
+.cell[data-num="3"] { color: #c84820; }
+.cell[data-num="4"] { color: #1a1a8c; }
+.cell[data-num="5"] { color: #8c1a1a; }
+.cell[data-num="6"] { color: #1a8c8c; }
+.cell[data-num="7"] { color: #1a1a1a; }
+.cell[data-num="8"] { color: #606060; }
+
+/* --- Animations --- */
+@keyframes swing-legs {
+  0%, 100% { transform: rotate(-6deg); }
+  50%       { transform: rotate(6deg);  }
+}
+
+@keyframes jump {
+  0%   { transform: translateY(0)     rotate(0deg);  }
+  35%  { transform: translateY(-18px) rotate(-5deg); }
+  65%  { transform: translateY(-12px) rotate(5deg);  }
+  100% { transform: translateY(0)     rotate(0deg);  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0)    rotate(0deg);  }
+  25%      { transform: translateX(-6px) rotate(-4deg); }
+  75%      { transform: translateX(6px)  rotate(4deg);  }
+}
+
+@keyframes bubble-pop {
+  from { transform: scale(0.4); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+#kostya-sprite.jump  { animation: jump  0.45s ease-out; }
+#kostya-sprite.shake { animation: shake 0.55s ease-in-out; }
+
+/* Flying flag appended to <body> during steal animation */
+.flying-flag {
+  position: fixed;
+  font-size: 20px;
+  pointer-events: none;
+  z-index: 1000;
+}
