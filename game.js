@@ -311,3 +311,131 @@ const UI = {
     setTimeout(() => Confetti.stop(), 3500);
   }
 };
+
+const Kostya = {
+  spriteEl: null,
+  bubbleEl: null,
+
+  init() {
+    this.spriteEl = document.getElementById('kostya-sprite');
+    this.bubbleEl = document.getElementById('speech-bubble');
+  },
+
+  reset() {
+    this.spriteEl.classList.remove('jump', 'shake');
+    this.bubbleEl.className = 'hidden';
+  },
+
+  // Animate flag flying from cellEl to Kostya, then call onFlagRemoved
+  animateSteal(cellEl, onFlagRemoved) {
+    const cellRect   = cellEl.getBoundingClientRect();
+    const kostyaRect = this.spriteEl.getBoundingClientRect();
+
+    const flyEl = document.createElement('div');
+    flyEl.className = 'flying-flag';
+    flyEl.textContent = '🚩';
+    flyEl.style.left = (cellRect.left + cellRect.width  / 2 - 10) + 'px';
+    flyEl.style.top  = (cellRect.top  + cellRect.height / 2 - 10) + 'px';
+    flyEl.style.transition = 'none';
+    document.body.appendChild(flyEl);
+
+    // Two rAF frames ensure the initial position is painted before transition fires
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      flyEl.style.transition = 'left 0.5s ease-in, top 0.5s ease-in, opacity 0.5s, transform 0.5s';
+      flyEl.style.left      = (kostyaRect.left + kostyaRect.width  / 2 - 10) + 'px';
+      flyEl.style.top       = (kostyaRect.top  + kostyaRect.height / 2 - 10) + 'px';
+      flyEl.style.opacity   = '0';
+      flyEl.style.transform = 'scale(0.2)';
+    }));
+
+    setTimeout(() => {
+      flyEl.remove();
+      onFlagRemoved();
+      this._jump();
+      this._showBubble();
+    }, 560);
+  },
+
+  animateDisappointed() {
+    this._shake();
+  },
+
+  _jump() {
+    this.spriteEl.classList.remove('jump', 'shake');
+    void this.spriteEl.offsetWidth; // force reflow to restart animation
+    this.spriteEl.classList.add('jump');
+    setTimeout(() => this.spriteEl.classList.remove('jump'), 460);
+  },
+
+  _shake() {
+    this.spriteEl.classList.remove('jump', 'shake');
+    void this.spriteEl.offsetWidth;
+    this.spriteEl.classList.add('shake');
+    setTimeout(() => this.spriteEl.classList.remove('shake'), 560);
+  },
+
+  _showBubble() {
+    this.bubbleEl.className = 'visible';
+    setTimeout(() => { this.bubbleEl.className = 'hidden'; }, 2200);
+  }
+};
+
+const Confetti = {
+  canvas: null,
+  ctx: null,
+  particles: [],
+  animId: null,
+
+  start() {
+    if (!this.canvas) {
+      this.canvas = document.createElement('canvas');
+      this.canvas.style.cssText =
+        'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999;';
+      document.body.appendChild(this.canvas);
+    }
+    this.canvas.width  = window.innerWidth;
+    this.canvas.height = window.innerHeight;
+    this.ctx = this.canvas.getContext('2d');
+    this.particles = Array.from({ length: 80 }, () => ({
+      x:    Math.random() * this.canvas.width,
+      y:    -(Math.random() * this.canvas.height * 0.5),
+      w:    6 + Math.random() * 10,
+      h:    3 + Math.random() * 6,
+      color: `hsl(${Math.random() * 360},80%,60%)`,
+      vy:   2 + Math.random() * 3,
+      vx:   (Math.random() - 0.5) * 2,
+      rot:  Math.random() * Math.PI * 2,
+      drot: (Math.random() - 0.5) * 0.15
+    }));
+    if (this.animId) cancelAnimationFrame(this.animId);
+    this._draw();
+  },
+
+  _draw() {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    let alive = false;
+    this.particles.forEach(p => {
+      p.y += p.vy; p.x += p.vx; p.rot += p.drot;
+      if (p.y < this.canvas.height + 20) alive = true;
+      this.ctx.save();
+      this.ctx.translate(p.x, p.y);
+      this.ctx.rotate(p.rot);
+      this.ctx.fillStyle = p.color;
+      this.ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      this.ctx.restore();
+    });
+    this.animId = alive
+      ? requestAnimationFrame(() => this._draw())
+      : (this.stop(), null);
+  },
+
+  stop() {
+    if (this.animId) { cancelAnimationFrame(this.animId); this.animId = null; }
+    if (this.canvas) { this.canvas.remove(); this.canvas = null; }
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  Kostya.init();
+  UI.init();
+});
