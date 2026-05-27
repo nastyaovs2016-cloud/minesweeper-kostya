@@ -7,6 +7,8 @@ const LEVELS = {
   expert: { rows: 24, cols: 30, mines: 160 }
 };
 
+const DIRS = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+
 class Game {
   constructor(level = 'easy') {
     this.level = level;
@@ -52,7 +54,7 @@ class Game {
   }
 
   _calcCounts() {
-    const dirs = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+    const dirs = DIRS;
     for (let r = 0; r < this.rows; r++) {
       for (let c = 0; c < this.cols; c++) {
         if (this.cells[r][c].mine) continue;
@@ -102,7 +104,7 @@ class Game {
   }
 
   _floodFill(row, col) {
-    const dirs = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+    const dirs = DIRS;
     const stack = [[row, col]];
     let count = 0;
     while (stack.length) {
@@ -122,11 +124,11 @@ class Game {
     return count;
   }
 
-  // Returns true (flag placed), false (flag removed), or false (not allowed)
+  // Returns true (flag placed), false (flag removed), or null (not allowed)
   toggleFlag(row, col) {
-    if (this.gameOver || this.won || this.firstClick) return false;
+    if (this.gameOver || this.won || this.firstClick) return null;
     const cell = this.cells[row][col];
-    if (cell.revealed) return false;
+    if (cell.revealed) return null;
     cell.flagged = !cell.flagged;
     this.flagCount += cell.flagged ? 1 : -1;
     return cell.flagged;
