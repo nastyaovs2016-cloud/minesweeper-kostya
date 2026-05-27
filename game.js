@@ -169,3 +169,145 @@ class Game {
     this.timerInterval = null;
   }
 }
+
+const UI = {
+  game: null,
+
+  init() {
+    document.getElementById('new-game-btn')
+      .addEventListener('click', () => this.newGame());
+    document.querySelectorAll('.diff-btn').forEach(btn =>
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.newGame(btn.dataset.level);
+      })
+    );
+    this.newGame('easy');
+  },
+
+  newGame(level) {
+    if (this.game) this.game._stopTimer();
+    const activeLevel = level ||
+      document.querySelector('.diff-btn.active').dataset.level;
+    this.game = new Game(activeLevel);
+    this._renderBoard();
+    this._updateMineCounter();
+    document.getElementById('time').textContent = '00:00';
+    document.getElementById('message').textContent = '';
+    document.getElementById('message').className = '';
+    if (typeof Kostya !== 'undefined') Kostya.reset();
+  },
+
+  _renderBoard() {
+    const boardEl = document.getElementById('board');
+    const { rows, cols } = this.game;
+    boardEl.style.gridTemplateColumns = `repeat(${cols}, 32px)`;
+    boardEl.innerHTML = '';
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const el = document.createElement('div');
+        el.className = 'cell';
+        el.dataset.row = r;
+        el.dataset.col = c;
+        el.addEventListener('click', () => this._handleReveal(r, c));
+        el.addEventListener('contextmenu', e => {
+          e.preventDefault();
+          this._handleFlag(r, c);
+        });
+        boardEl.appendChild(el);
+      }
+    }
+  },
+
+  _getCellEl(row, col) {
+    return document.querySelector(`#board [data-row="${row}"][data-col="${col}"]`);
+  },
+
+  _updateCellEl(row, col) {
+    const el = this._getCellEl(row, col);
+    const cell = this.game.cells[row][col];
+    el.className = 'cell';
+    delete el.dataset.num;
+    el.textContent = '';
+    if (cell.revealed) {
+      el.classList.add('revealed');
+      if (cell.count > 0) {
+        el.textContent = cell.count;
+        el.dataset.num = cell.count;
+      }
+    } else if (cell.flagged) {
+      el.classList.add('flagged');
+      el.textContent = '🚩';
+    }
+  },
+
+  _refreshAllCells() {
+    for (let r = 0; r < this.game.rows; r++)
+      for (let c = 0; c < this.game.cols; c++)
+        this._updateCellEl(r, c);
+  },
+
+  _updateMineCounter() {
+    document.getElementById('mines-left').textContent =
+      this.game.totalMines - this.game.flagCount;
+  },
+
+  _handleReveal(row, col) {
+    const result = this.game.reveal(row, col);
+    if (result.type === 'none') return;
+    this._refreshAllCells();
+    this._updateMineCounter();
+    if (result.type === 'mine') {
+      this._showGameOver(result.row, result.col);
+    } else {
+      this._scheduleKostyaSteals(result.steals);
+      if (result.type === 'win') this._showWin();
+    }
+  },
+
+  _handleFlag(row, col) {
+    const result = this.game.toggleFlag(row, col);
+    if (result !== null) {
+      this._updateCellEl(row, col);
+      this._updateMineCounter();
+    }
+  },
+
+  _scheduleKostyaSteals(count) {
+    for (let i = 0; i < count; i++) {
+      setTimeout(() => {
+        const stolen = this.game.stealRandomFlag();
+        if (stolen) {
+          const [r, c] = stolen;
+          Kostya.animateSteal(this._getCellEl(r, c), () => {
+            this._updateCellEl(r, c);
+            this._updateMineCounter();
+          });
+        } else {
+          Kostya.animateDisappointed();
+        }
+      }, i * 1100 + 300);
+    }
+  },
+
+  _showGameOver(hitRow, hitCol) {
+    this.game.getAllMines().forEach(([r, c]) => {
+      const el = this._getCellEl(r, c);
+      el.classList.add('revealed', 'mine');
+      el.textContent = '💣';
+    });
+    this._getCellEl(hitRow, hitCol).classList.add('mine-hit');
+    const msg = document.getElementById('message');
+    msg.textContent = 'GAME OVER';
+    msg.className = 'lose';
+  },
+
+  _showWin() {
+    const msg = document.getElementById('message');
+    msg.textContent = 'YOU WIN!';
+    msg.className = 'win';
+    Confetti.start();
+    setTimeout(() => Confetti.stop(), 3500);
+  }
+};
