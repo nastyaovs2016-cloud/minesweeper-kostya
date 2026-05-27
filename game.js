@@ -187,6 +187,7 @@ const UI = {
   },
 
   newGame(level) {
+    if (typeof Confetti !== 'undefined') Confetti.stop();
     if (this.game) this.game._stopTimer();
     const activeLevel = level ||
       document.querySelector('.diff-btn.active').dataset.level;
