@@ -140,7 +140,7 @@ body {
 }
 #speech-bubble.timeout {
   white-space: normal;
-  width: 160px;
+  width: 220px;
   line-height: 1.8;
 }
 #speech-bubble::after {
