@@ -376,7 +376,7 @@ const Kostya = {
   },
 
   _startWander(totalRows) {
-    const maxTop = Math.max(0, totalRows * 34 - 100);
+    const maxTop = Math.max(0, totalRows * 34 - 110);
     this._wanderInterval = setInterval(() => {
       this._moveTo(Math.floor(Math.random() * (maxTop + 1)));
     }, 2500);
