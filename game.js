@@ -1,10 +1,10 @@
 'use strict';
 
 const LEVELS = {
-  easy:   { rows:  9, cols:  9, mines:  10 },
-  medium: { rows: 16, cols: 16, mines:  40 },
-  hard:   { rows: 16, cols: 30, mines:  99 },
-  expert: { rows: 24, cols: 30, mines: 160 }
+  easy:   { rows:  9, cols:  9, mines:  10, timeLimit: 120 },
+  medium: { rows: 16, cols: 16, mines:  40, timeLimit: 300 },
+  hard:   { rows: 16, cols: 30, mines:  99, timeLimit: 600 },
+  expert: { rows: 24, cols: 30, mines: 160, timeLimit: 900 }
 };
 
 const DIRS = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
@@ -12,20 +12,19 @@ const DIRS = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
 class Game {
   constructor(level = 'easy') {
     this.level = level;
-    const { rows, cols, mines } = LEVELS[level];
+    const { rows, cols, mines, timeLimit } = LEVELS[level];
     this.rows = rows;
     this.cols = cols;
     this.totalMines = mines;
-    // cells[r][c] = { mine: bool, flagged: bool, revealed: bool, count: int }
+    this.timeLimit = timeLimit;
     this.cells = [];
     this.flagCount = 0;
     this.revealedCount = 0;
-    this.flagsPlacedSinceLastSteal = 0;
-    this.nextStealThreshold = this._randomThreshold();
+    this.totalFlagsPlaced = 0;
     this.firstClick = true;
     this.gameOver = false;
     this.won = false;
-    this.seconds = 0;
+    this.onTimeout = null;
     this.timerInterval = null;
     this._initBoard();
   }
@@ -55,12 +54,11 @@ class Game {
   }
 
   _calcCounts() {
-    const dirs = DIRS;
     for (let r = 0; r < this.rows; r++) {
       for (let c = 0; c < this.cols; c++) {
         if (this.cells[r][c].mine) continue;
         let count = 0;
-        for (const [dr, dc] of dirs) {
+        for (const [dr, dc] of DIRS) {
           const nr = r + dr, nc = c + dc;
           if (nr >= 0 && nr < this.rows && nc >= 0 && nc < this.cols && this.cells[nr][nc].mine)
             count++;
@@ -70,7 +68,6 @@ class Game {
     }
   }
 
-  // Returns { type: 'none'|'mine'|'reveal'|'win', row?: number, col?: number }
   reveal(row, col) {
     if (this.gameOver || this.won) return { type: 'none' };
     const cell = this.cells[row][col];
@@ -101,7 +98,6 @@ class Game {
   }
 
   _floodFill(row, col) {
-    const dirs = DIRS;
     const stack = [[row, col]];
     let count = 0;
     while (stack.length) {
@@ -111,7 +107,7 @@ class Game {
       cell.revealed = true;
       count++;
       if (cell.count === 0) {
-        for (const [dr, dc] of dirs) {
+        for (const [dr, dc] of DIRS) {
           const nr = r + dr, nc = c + dc;
           if (nr >= 0 && nr < this.rows && nc >= 0 && nc < this.cols)
             stack.push([nr, nc]);
@@ -130,21 +126,15 @@ class Game {
     this.flagCount += cell.flagged ? 1 : -1;
     let steals = 0;
     if (cell.flagged) {
-      this.flagsPlacedSinceLastSteal++;
-      if (this.flagsPlacedSinceLastSteal >= this.nextStealThreshold) {
-        this.flagsPlacedSinceLastSteal = 0;
-        this.nextStealThreshold = this._randomThreshold();
+      this.totalFlagsPlaced++;
+      // After first 2 flags, each placement has a 30% chance to trigger a steal
+      if (this.totalFlagsPlaced > 2 && Math.random() < 0.3) {
         steals = 1;
       }
     }
     return { placed: cell.flagged, steals };
   }
 
-  _randomThreshold() {
-    return Math.random() < 0.5 ? 3 : 5;
-  }
-
-  // Returns [row, col] of stolen flag, or null if no flags exist
   stealRandomFlag() {
     const flagged = [];
     for (let r = 0; r < this.rows; r++)
@@ -166,11 +156,27 @@ class Game {
   }
 
   _startTimer() {
+    let remaining = this.timeLimit;
+    const timeEl  = document.getElementById('time');
+    const timerEl = document.getElementById('timer');
+
+    const fmt = s => {
+      const m = String(Math.floor(s / 60)).padStart(2, '0');
+      const sec = String(s % 60).padStart(2, '0');
+      return `${m}:${sec}`;
+    };
+
     this.timerInterval = setInterval(() => {
-      this.seconds++;
-      const m = String(Math.floor(this.seconds / 60)).padStart(2, '0');
-      const s = String(this.seconds % 60).padStart(2, '0');
-      document.getElementById('time').textContent = `${m}:${s}`;
+      remaining--;
+      timeEl.textContent = fmt(remaining);
+
+      if (remaining <= 30) timerEl.classList.add('warning');
+
+      if (remaining <= 0) {
+        this._stopTimer();
+        this.gameOver = true;
+        if (this.onTimeout) this.onTimeout();
+      }
     }, 1000);
   }
 
@@ -202,9 +208,13 @@ const UI = {
     const activeLevel = level ||
       document.querySelector('.diff-btn.active').dataset.level;
     this.game = new Game(activeLevel);
+    this.game.onTimeout = () => this._handleTimeout();
     this._renderBoard();
     this._updateMineCounter();
-    document.getElementById('time').textContent = '00:00';
+    // Show initial countdown time
+    const fmt = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+    document.getElementById('time').textContent = fmt(this.game.timeLimit);
+    document.getElementById('timer').classList.remove('warning');
     document.getElementById('message').textContent = '';
     document.getElementById('message').className = '';
     if (typeof Kostya !== 'undefined') Kostya.reset(this.game.rows);
@@ -295,8 +305,6 @@ const UI = {
             this._updateCellEl(r, c);
             this._updateMineCounter();
           });
-        } else {
-          Kostya.animateDisappointed();
         }
       }, i * 1100 + 300);
     }
@@ -313,6 +321,19 @@ const UI = {
     msg.textContent = 'GAME OVER';
     msg.className = 'lose';
     Kostya.animateLose();
+  },
+
+  _handleTimeout() {
+    this._refreshAllCells();
+    this.game.getAllMines().forEach(([r, c]) => {
+      const el = this._getCellEl(r, c);
+      el.classList.add('revealed', 'mine');
+      el.textContent = '💣';
+    });
+    const msg = document.getElementById('message');
+    msg.textContent = 'ВРЕМЯ ВЫШЛО!';
+    msg.className = 'lose';
+    Kostya.animateTimeout();
   },
 
   _showWin() {
@@ -332,21 +353,21 @@ const Kostya = {
   _wanderInterval: null,
 
   init() {
-    this.imgEl      = document.getElementById('kostya-img');
-    this.bubbleEl   = document.getElementById('speech-bubble');
+    this.imgEl       = document.getElementById('kostya-img');
+    this.bubbleEl    = document.getElementById('speech-bubble');
     this.containerEl = document.getElementById('kostya-container');
   },
 
   reset(totalRows) {
     this.imgEl.src = 'pixel_character_stomp_v2.gif';
     this.bubbleEl.className = 'hidden';
+    this.bubbleEl.textContent = 'Византично!';
     this._stopWander();
     this._moveTo(0);
     this._startWander(totalRows);
   },
 
   _rowToPx(row) {
-    // each cell is 32px tall + 2px gap, board has 4px border on top
     return 4 + row * 34;
   },
 
@@ -355,11 +376,9 @@ const Kostya = {
   },
 
   _startWander(totalRows) {
-    const cellPx = 34;
-    const maxTop = Math.max(0, totalRows * cellPx - 90);
+    const maxTop = Math.max(0, totalRows * 34 - 100);
     this._wanderInterval = setInterval(() => {
-      const newTop = Math.floor(Math.random() * (maxTop + 1));
-      this._moveTo(newTop);
+      this._moveTo(Math.floor(Math.random() * (maxTop + 1)));
     }, 2500);
   },
 
@@ -369,12 +388,11 @@ const Kostya = {
   },
 
   animateSteal(cellEl, onFlagRemoved) {
-    // Move Kostya to the stolen flag's row first
     const row = parseInt(cellEl.dataset.row, 10);
     this._moveTo(this._rowToPx(row));
 
-    const cellRect    = cellEl.getBoundingClientRect();
-    const kostyaRect  = this.containerEl.getBoundingClientRect();
+    const cellRect   = cellEl.getBoundingClientRect();
+    const kostyaRect = this.containerEl.getBoundingClientRect();
 
     const flyEl = document.createElement('div');
     flyEl.className = 'flying-flag';
@@ -396,14 +414,10 @@ const Kostya = {
       flyEl.remove();
       onFlagRemoved();
       this.imgEl.src = 'pointing.gif';
-      this._showBubble(() => {
+      this._showBubble('Византично!', false, () => {
         this.imgEl.src = 'pixel_character_stomp_v2.gif';
       });
     }, 560);
-  },
-
-  animateDisappointed() {
-    // no flags to steal — do nothing
   },
 
   animateLose() {
@@ -418,12 +432,21 @@ const Kostya = {
     this.bubbleEl.className = 'hidden';
   },
 
-  _showBubble(onHide) {
-    this.bubbleEl.className = 'visible';
-    setTimeout(() => {
-      this.bubbleEl.className = 'hidden';
-      if (onHide) onHide();
-    }, 2200);
+  animateTimeout() {
+    this._stopWander();
+    this.imgEl.src = 'happy_jump.gif';
+    this._showBubble('Сапёр из тебя никудышный. Это было вакханально', true);
+  },
+
+  _showBubble(text, persistent, onHide) {
+    this.bubbleEl.textContent = text;
+    this.bubbleEl.className = persistent ? 'visible timeout' : 'visible';
+    if (!persistent) {
+      setTimeout(() => {
+        this.bubbleEl.className = 'hidden';
+        if (onHide) onHide();
+      }, 2200);
+    }
   }
 };
 

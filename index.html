@@ -6,10 +6,11 @@
   <title>Minesweeper</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Tiny5&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <p id="hint">Расставляйте флажки, находите мины и не дайте Сапёрику вас запутать — он может случайно украсть флажок в любой момент.</p>
   <div id="app">
     <div id="difficulty-selector">
       <button class="diff-btn active" data-level="easy">Easy</button>
@@ -20,7 +21,7 @@
     <div id="game-container">
       <div id="sidebar">
         <div id="mine-counter">💣 <span id="mines-left">10</span></div>
-        <div id="timer">⏱ <span id="time">00:00</span></div>
+        <div id="timer">⏱ <span id="time">02:00</span></div>
         <button id="new-game-btn">NEW GAME</button>
         <div id="message"></div>
       </div>
