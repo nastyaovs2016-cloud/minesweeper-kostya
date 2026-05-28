@@ -1,7 +1,7 @@
 'use strict';
 
 const LEVELS = {
-  easy:   { rows:  9, cols:  9, mines:  10, timeLimit: 60 },
+  easy:   { rows:  9, cols:  9, mines:  10, timeLimit: 150 },
   medium: { rows: 16, cols: 16, mines:  40, timeLimit: 300 },
   hard:   { rows: 16, cols: 30, mines:  99, timeLimit: 600 },
   expert: { rows: 24, cols: 30, mines: 160, timeLimit: 900 }
