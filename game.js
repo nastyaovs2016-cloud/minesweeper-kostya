@@ -423,7 +423,7 @@ const Kostya = {
   animateLose() {
     this._stopWander();
     this.imgEl.src = 'happy_jump.gif';
-    this._showBubble('Сапёр из тебя никудышный. Это было вакханально', true);
+    this._showBubble('Сапёр из тебя никудышный.<br>Это было вакханально', true);
   },
 
   animateWin() {
@@ -435,11 +435,11 @@ const Kostya = {
   animateTimeout() {
     this._stopWander();
     this.imgEl.src = 'happy_jump.gif';
-    this._showBubble('Сапёр из тебя никудышный. Это было вакханально', true);
+    this._showBubble('Сапёр из тебя никудышный.<br>Это было вакханально', true);
   },
 
   _showBubble(text, persistent, onHide) {
-    this.bubbleEl.textContent = text;
+    this.bubbleEl.innerHTML = text;
     this.bubbleEl.className = persistent ? 'visible timeout' : 'visible';
     if (!persistent) {
       setTimeout(() => {
