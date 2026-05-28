@@ -423,7 +423,7 @@ const Kostya = {
   animateLose() {
     this._stopWander();
     this.imgEl.src = 'happy_jump.gif';
-    this.bubbleEl.className = 'hidden';
+    this._showBubble('Сапёр из тебя никудышный. Это было вакханально', true);
   },
 
   animateWin() {
