@@ -33,7 +33,7 @@ body {
   font-size: 24px;
   color: #6B3A1E;
   text-align: center;
-  white-space: nowrap;
+  line-height: 1.6;
   pointer-events: none;
   z-index: 100;
 }
@@ -43,7 +43,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: 24px;
 }
 
 /* --- Difficulty buttons --- */
@@ -113,7 +113,7 @@ body {
   line-height: 1.4;
 }
 #message.win  { color: #90EE90; }
-#message.lose { color: #FF6060; }
+#message.lose { color: #FF1111; text-shadow: 0 0 8px #FF0000; }
 
 /* --- Board wrapper: Kostya floats outside on the right --- */
 #board-wrapper {
