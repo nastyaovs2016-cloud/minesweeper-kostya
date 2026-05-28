@@ -312,35 +312,36 @@ const UI = {
     const msg = document.getElementById('message');
     msg.textContent = 'GAME OVER';
     msg.className = 'lose';
+    Kostya.animateLose();
   },
 
   _showWin() {
     const msg = document.getElementById('message');
     msg.textContent = 'YOU WIN!';
     msg.className = 'win';
+    Kostya.animateWin();
     Confetti.start();
     setTimeout(() => Confetti.stop(), 3500);
   }
 };
 
 const Kostya = {
-  spriteEl: null,
+  imgEl: null,
   bubbleEl: null,
 
   init() {
-    this.spriteEl = document.getElementById('kostya-sprite');
+    this.imgEl   = document.getElementById('kostya-img');
     this.bubbleEl = document.getElementById('speech-bubble');
   },
 
   reset() {
-    this.spriteEl.classList.remove('jump', 'shake');
+    this.imgEl.src = 'pixel_character_stomp_v2.gif';
     this.bubbleEl.className = 'hidden';
   },
 
-  // Animate flag flying from cellEl to Kostya, then call onFlagRemoved
   animateSteal(cellEl, onFlagRemoved) {
     const cellRect   = cellEl.getBoundingClientRect();
-    const kostyaRect = this.spriteEl.getBoundingClientRect();
+    const kostyaRect = this.imgEl.getBoundingClientRect();
 
     const flyEl = document.createElement('div');
     flyEl.className = 'flying-flag';
@@ -350,7 +351,6 @@ const Kostya = {
     flyEl.style.transition = 'none';
     document.body.appendChild(flyEl);
 
-    // Two rAF frames ensure the initial position is painted before transition fires
     requestAnimationFrame(() => requestAnimationFrame(() => {
       flyEl.style.transition = 'left 0.5s ease-in, top 0.5s ease-in, opacity 0.5s, transform 0.5s';
       flyEl.style.left      = (kostyaRect.left + kostyaRect.width  / 2 - 10) + 'px';
@@ -362,32 +362,33 @@ const Kostya = {
     setTimeout(() => {
       flyEl.remove();
       onFlagRemoved();
-      this._jump();
-      this._showBubble();
+      this.imgEl.src = 'pointing.gif';
+      this._showBubble(() => {
+        this.imgEl.src = 'pixel_character_stomp_v2.gif';
+      });
     }, 560);
   },
 
   animateDisappointed() {
-    this._shake();
+    // no flags to steal — do nothing
   },
 
-  _jump() {
-    this.spriteEl.classList.remove('jump', 'shake');
-    void this.spriteEl.offsetWidth; // force reflow to restart animation
-    this.spriteEl.classList.add('jump');
-    setTimeout(() => this.spriteEl.classList.remove('jump'), 460);
+  animateLose() {
+    this.imgEl.src = 'happy_jump.gif';
+    this.bubbleEl.className = 'hidden';
   },
 
-  _shake() {
-    this.spriteEl.classList.remove('jump', 'shake');
-    void this.spriteEl.offsetWidth;
-    this.spriteEl.classList.add('shake');
-    setTimeout(() => this.spriteEl.classList.remove('shake'), 560);
+  animateWin() {
+    this.imgEl.src = 'panic_scream.gif';
+    this.bubbleEl.className = 'hidden';
   },
 
-  _showBubble() {
+  _showBubble(onHide) {
     this.bubbleEl.className = 'visible';
-    setTimeout(() => { this.bubbleEl.className = 'hidden'; }, 2200);
+    setTimeout(() => {
+      this.bubbleEl.className = 'hidden';
+      if (onHide) onHide();
+    }, 2200);
   }
 };
 
