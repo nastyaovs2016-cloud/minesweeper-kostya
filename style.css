@@ -30,8 +30,8 @@ body {
   left: 50%;
   transform: translateX(-50%);
   font-family: 'Tiny5', monospace;
-  font-size: 16px;
-  color: var(--text);
+  font-size: 24px;
+  color: #6B3A1E;
   text-align: center;
   white-space: nowrap;
   pointer-events: none;
