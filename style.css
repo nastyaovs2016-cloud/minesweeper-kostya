@@ -24,10 +24,30 @@ body {
 
 #app {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
 }
 
+/* --- Difficulty buttons (top of page, bigger) --- */
+#difficulty-selector { display: flex; gap: 8px; }
+
+.diff-btn {
+  font-family: var(--font);
+  font-size: 14px;
+  padding: 10px 22px;
+  background: #8B5E3C;
+  color: var(--text);
+  border: 2px solid;
+  border-color: #A07050 #5A3010 #5A3010 #A07050;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+.diff-btn:hover,
+.diff-btn.active { background: #A07050; }
+
 /* --- Game layout --- */
-#game-container { display: flex; gap: 24px; align-items: flex-end; }
+#game-container { display: flex; gap: 24px; align-items: flex-start; }
 
 #sidebar {
   display: flex;
@@ -67,44 +87,20 @@ body {
 #message.win  { color: #90EE90; }
 #message.lose { color: #FF6060; }
 
-/* --- Board wrapper --- */
+/* --- Board wrapper: Kostya floats outside on the right --- */
 #board-wrapper {
-  display: flex;
-  flex-direction: column;
-}
-
-/* --- Board header: difficulty buttons + Kostya --- */
-#board-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 8px;
-  gap: 12px;
-}
-
-/* --- Difficulty buttons --- */
-#difficulty-selector { display: flex; gap: 6px; }
-
-.diff-btn {
-  font-family: var(--font);
-  font-size: 11px;
-  padding: 6px 12px;
-  background: #8B5E3C;
-  color: var(--text);
-  border: 2px solid;
-  border-color: #A07050 #5A3010 #5A3010 #A07050;
-  cursor: pointer;
-  text-transform: uppercase;
-}
-.diff-btn:hover,
-.diff-btn.active { background: #A07050; }
-
-/* --- Kostya --- */
-#kostya-container {
   position: relative;
-  display: flex;
-  align-items: flex-end;
-  flex-shrink: 0;
+  overflow: visible;
+}
+
+/* --- Kostya: positioned outside board on the right --- */
+#kostya-container {
+  position: absolute;
+  right: -100px;
+  top: 0;
+  width: 90px;
+  transition: top 0.7s ease-in-out;
+  z-index: 10;
 }
 
 #kostya-img {
@@ -115,11 +111,11 @@ body {
   image-rendering: crisp-edges;
 }
 
-/* Comic speech bubble */
+/* Comic speech bubble — appears to the left of Kostya */
 #speech-bubble {
   position: absolute;
-  bottom: 94px;
-  right: 0;
+  top: 8px;
+  right: 94px;
   background: #FFF8E8;
   color: #2a1005;
   font-family: var(--font);
@@ -131,10 +127,11 @@ body {
 #speech-bubble::after {
   content: '';
   position: absolute;
-  bottom: -9px;
-  right: 16px;
+  top: 50%;
+  right: -9px;
+  transform: translateY(-50%);
   border: 4px solid transparent;
-  border-top-color: #2a1005;
+  border-left-color: #2a1005;
 }
 #speech-bubble.hidden  { display: none; }
 #speech-bubble.visible {

@@ -11,6 +11,12 @@
 </head>
 <body>
   <div id="app">
+    <div id="difficulty-selector">
+      <button class="diff-btn active" data-level="easy">Easy</button>
+      <button class="diff-btn" data-level="medium">Medium</button>
+      <button class="diff-btn" data-level="hard">Hard</button>
+      <button class="diff-btn" data-level="expert">Expert</button>
+    </div>
     <div id="game-container">
       <div id="sidebar">
         <div id="mine-counter">💣 <span id="mines-left">10</span></div>
@@ -19,17 +25,9 @@
         <div id="message"></div>
       </div>
       <div id="board-wrapper">
-        <div id="board-header">
-          <div id="difficulty-selector">
-            <button class="diff-btn active" data-level="easy">Easy</button>
-            <button class="diff-btn" data-level="medium">Medium</button>
-            <button class="diff-btn" data-level="hard">Hard</button>
-            <button class="diff-btn" data-level="expert">Expert</button>
-          </div>
-          <div id="kostya-container">
-            <div id="speech-bubble" class="hidden">Византично!</div>
-            <img id="kostya-img" src="pixel_character_stomp_v2.gif" alt="Kostya">
-          </div>
+        <div id="kostya-container">
+          <div id="speech-bubble" class="hidden">Византично!</div>
+          <img id="kostya-img" src="pixel_character_stomp_v2.gif" alt="Kostya">
         </div>
         <div id="board"></div>
       </div>

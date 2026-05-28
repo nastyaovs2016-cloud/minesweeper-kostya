@@ -207,7 +207,7 @@ const UI = {
     document.getElementById('time').textContent = '00:00';
     document.getElementById('message').textContent = '';
     document.getElementById('message').className = '';
-    if (typeof Kostya !== 'undefined') Kostya.reset();
+    if (typeof Kostya !== 'undefined') Kostya.reset(this.game.rows);
   },
 
   _renderBoard() {
@@ -328,20 +328,53 @@ const UI = {
 const Kostya = {
   imgEl: null,
   bubbleEl: null,
+  containerEl: null,
+  _wanderInterval: null,
 
   init() {
-    this.imgEl   = document.getElementById('kostya-img');
-    this.bubbleEl = document.getElementById('speech-bubble');
+    this.imgEl      = document.getElementById('kostya-img');
+    this.bubbleEl   = document.getElementById('speech-bubble');
+    this.containerEl = document.getElementById('kostya-container');
   },
 
-  reset() {
+  reset(totalRows) {
     this.imgEl.src = 'pixel_character_stomp_v2.gif';
     this.bubbleEl.className = 'hidden';
+    this._stopWander();
+    this._moveTo(0);
+    this._startWander(totalRows);
+  },
+
+  _rowToPx(row) {
+    // each cell is 32px tall + 2px gap, board has 4px border on top
+    return 4 + row * 34;
+  },
+
+  _moveTo(topPx) {
+    this.containerEl.style.top = topPx + 'px';
+  },
+
+  _startWander(totalRows) {
+    const cellPx = 34;
+    const maxTop = Math.max(0, totalRows * cellPx - 90);
+    this._wanderInterval = setInterval(() => {
+      const newTop = Math.floor(Math.random() * (maxTop + 1));
+      this._moveTo(newTop);
+    }, 2500);
+  },
+
+  _stopWander() {
+    clearInterval(this._wanderInterval);
+    this._wanderInterval = null;
   },
 
   animateSteal(cellEl, onFlagRemoved) {
-    const cellRect   = cellEl.getBoundingClientRect();
-    const kostyaRect = this.imgEl.getBoundingClientRect();
+    // Move Kostya to the stolen flag's row first
+    const row = parseInt(cellEl.dataset.row, 10);
+    this._moveTo(this._rowToPx(row));
+
+    const cellRect    = cellEl.getBoundingClientRect();
+    const kostyaRect  = this.containerEl.getBoundingClientRect();
 
     const flyEl = document.createElement('div');
     flyEl.className = 'flying-flag';
@@ -374,11 +407,13 @@ const Kostya = {
   },
 
   animateLose() {
+    this._stopWander();
     this.imgEl.src = 'happy_jump.gif';
     this.bubbleEl.className = 'hidden';
   },
 
   animateWin() {
+    this._stopWander();
     this.imgEl.src = 'panic_scream.gif';
     this.bubbleEl.className = 'hidden';
   },
